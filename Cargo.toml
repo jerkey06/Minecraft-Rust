@@ -1,0 +1,31 @@
+[package]
+name = "minecraft-clone"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Renderizado y ventana
+winit = "0.29"
+wgpu = "0.19"
+env_logger = "0.10"
+log = "0.4"
+
+# Matemáticas
+cgmath = "0.18"
+bytemuck = { version = "1.14", features = ["derive"] }
+
+# Monitoreo y performance
+sysinfo = "0.30"
+fps_counter = "3.0"
+
+# Async y threading
+tokio = { version = "1.35", features = ["full"] }
+futures = "0.3"
+
+# Utilidades
+anyhow = "1.0"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
