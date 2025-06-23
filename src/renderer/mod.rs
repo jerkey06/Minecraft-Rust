@@ -1,65 +1,17 @@
+mod vertex;
+mod uniforms;
+mod geometry;
+mod camera;
+
+pub use vertex::Vertex;
+pub use uniforms::Uniforms;
+pub use geometry::Cube;
+pub use camera::Camera;
+
 use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
-use log::{info};
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-struct Vertex {
-    position: [f32; 3],
-    color: [f32; 3],
-}
-
-impl Vertex {
-    fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
-        wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &[
-                wgpu::VertexAttribute {
-                    offset: 0,
-                    shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-                wgpu::VertexAttribute {
-                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
-                    shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-            ]
-        }
-    }
-}
-
-// Simple cube vertices for testing
-const VERTICES: &[Vertex] = &[
-    // Front face
-    Vertex { position: [-0.5, -0.5,  0.5], color: [1.0, 0.0, 0.0] },
-    Vertex { position: [ 0.5, -0.5,  0.5], color: [0.0, 1.0, 0.0] },
-    Vertex { position: [ 0.5,  0.5,  0.5], color: [0.0, 0.0, 1.0] },
-    Vertex { position: [-0.5,  0.5,  0.5], color: [1.0, 1.0, 0.0] },
-    
-    // Back face
-    Vertex { position: [-0.5, -0.5, -0.5], color: [1.0, 0.0, 1.0] },
-    Vertex { position: [ 0.5, -0.5, -0.5], color: [0.0, 1.0, 1.0] },
-    Vertex { position: [ 0.5,  0.5, -0.5], color: [0.5, 0.5, 0.5] },
-    Vertex { position: [-0.5,  0.5, -0.5], color: [1.0, 0.5, 0.0] },
-];
-
-const INDICES: &[u16] = &[
-    // Front face
-    0, 1, 2, 2, 3, 0,
-    // Back face
-    4, 6, 5, 6, 4, 7,
-    // Left face
-    4, 0, 3, 3, 7, 4,
-    // Right face
-    1, 5, 6, 6, 2, 1,
-    // Top face
-    3, 2, 6, 6, 7, 3,
-    // Bottom face
-    4, 5, 1, 1, 0, 4,
-];
+use log::info;
 
 pub struct Renderer {
     surface: wgpu::Surface<'static>,
@@ -68,61 +20,31 @@ pub struct Renderer {
     config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
     render_pipeline: wgpu::RenderPipeline,
-    vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
-    num_indices: u32,
     
-    // Uniforms for transformations
+    // Componentes separados
+    camera: Camera,
+    cube: Cube,
+    
+    // Buffers y recursos
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
+    
+    // Estado
     rotation: f32,
-}
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-struct Uniforms {
-    view_proj: [[f32; 4]; 4],
-}
-
-impl Uniforms {
-    fn new() -> Self {
-        use cgmath::{Matrix4, SquareMatrix};
-        Self {
-            view_proj: Matrix4::identity().into(),
-        }
-    }
-
-    fn update_view_proj(&mut self, camera_pos: cgmath::Point3<f32>, rotation: f32, aspect: f32) {
-        use cgmath::{Matrix4, SquareMatrix, perspective, Deg, Rad};
-        
-        let view = Matrix4::look_at_rh(
-            camera_pos,
-            cgmath::Point3::new(0.0, 0.0, 0.0),
-            cgmath::Vector3::unit_y(),
-        );
-        
-        let proj = perspective(Deg(45.0), aspect, 0.1, 100.0);
-        
-        let rotation_matrix = Matrix4::from_angle_y(Rad(rotation));
-        
-        self.view_proj = (proj * view * rotation_matrix).into();
-    }
 }
 
 impl Renderer {
     pub async fn new(window: Arc<Window>) -> anyhow::Result<Self> {
         let size = window.inner_size();
         
-        // Crear instancia de wgpu
+        // Configuración de wgpu
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::PRIMARY,
             ..Default::default()
         });
         
-        // Crear surface
         let surface = instance.create_surface(window)?;
         
-        // Solicitar adapter
         let adapter = instance.request_adapter(
             &wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
@@ -134,7 +56,6 @@ impl Renderer {
         info!("GPU: {:?}", adapter.get_info().name);
         info!("Backend: {:?}", adapter.get_info().backend);
 
-        // Solicitar device y queue
         let (device, queue) = adapter.request_device(
             &wgpu::DeviceDescriptor {
                 required_features: wgpu::Features::empty(),
@@ -156,7 +77,7 @@ impl Renderer {
             format: surface_format,
             width: size.width,
             height: size.height,
-            present_mode: wgpu::PresentMode::Fifo, // VSync
+            present_mode: wgpu::PresentMode::Fifo,
             alpha_mode: surface_caps.alpha_modes[0],
             view_formats: vec![],
             desired_maximum_frame_latency: 2,
@@ -164,19 +85,26 @@ impl Renderer {
         
         surface.configure(&device, &config);
 
-        // Crear shaders
+        // Crear shader
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
         });
 
-        // Crear uniform buffer
-        let mut uniforms = Uniforms::new();
-        uniforms.update_view_proj(
+        // Crear cámara
+        let camera = Camera::new(
             cgmath::Point3::new(0.0, 0.0, 3.0),
-            0.0,
-            config.width as f32 / config.height as f32
+            cgmath::Point3::new(0.0, 0.0, 0.0),
+            cgmath::Vector3::unit_y(),
+            45.0,
+            size.width as f32 / size.height as f32,
+            0.1,
+            100.0,
         );
+
+        // Crear uniforms
+        let mut uniforms = Uniforms::new();
+        uniforms.update_from_camera(&camera, 0.0);
 
         let uniform_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
@@ -255,25 +183,8 @@ impl Renderer {
             multiview: None,
         });
 
-        // Crear vertex buffer
-        let vertex_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(VERTICES),
-                usage: wgpu::BufferUsages::VERTEX,
-            }
-        );
-
-        // Crear index buffer
-        let index_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(INDICES),
-                usage: wgpu::BufferUsages::INDEX,
-            }
-        );
-
-        let num_indices = INDICES.len() as u32;
+        // Crear geometría
+        let cube = Cube::new(&device);
 
         Ok(Self {
             surface,
@@ -282,9 +193,8 @@ impl Renderer {
             config,
             size,
             render_pipeline,
-            vertex_buffer,
-            index_buffer,
-            num_indices,
+            camera,
+            cube,
             uniform_buffer,
             uniform_bind_group,
             rotation: 0.0,
@@ -297,6 +207,9 @@ impl Renderer {
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
+            
+            // Actualizar aspect ratio de la cámara
+            self.camera.set_aspect_ratio(new_size.width as f32 / new_size.height as f32);
         }
     }
 
@@ -310,11 +223,7 @@ impl Renderer {
 
         // Actualizar uniforms
         let mut uniforms = Uniforms::new();
-        uniforms.update_view_proj(
-            cgmath::Point3::new(0.0, 0.0, 3.0),
-            self.rotation,
-            self.config.width as f32 / self.config.height as f32
-        );
+        uniforms.update_from_camera(&self.camera, self.rotation);
 
         self.queue.write_buffer(
             &self.uniform_buffer,
@@ -350,11 +259,8 @@ impl Renderer {
                 timestamp_writes: None,
             });
 
-            render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            // Renderizar cubo
+            self.cube.render(&mut render_pass, &self.render_pipeline, &self.uniform_bind_group);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
