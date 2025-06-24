@@ -1,4 +1,4 @@
-use cgmath::{Matrix4, Point3, Vector3, perspective, Deg, InnerSpace};
+use cgmath::{Matrix4, Point3, Vector3, perspective, Deg, InnerSpace, Angle};
 
 pub struct Camera {
     pub position: Point3<f32>,
@@ -57,12 +57,12 @@ impl Camera {
     }
     
     pub fn rotate_around_target(&mut self, yaw: f32, pitch: f32) {
-        use cgmath::{Rad, Matrix3};
-        
-        let offset = self.position - self.target;
-        let rotation = Matrix3::from_angle_y(Rad(yaw)) * Matrix3::from_angle_x(Rad(pitch));
-        let rotated_offset = rotation * offset.to_vec();
-        
-        self.position = self.target + rotated_offset;
-    }
+    use cgmath::{Rad, Matrix3};
+
+    let offset: Vector3<f32> = self.position - self.target;
+    let rotation: Matrix3<f32> = Matrix3::from_angle_y(Rad(yaw)) * Matrix3::from_angle_x(Rad(pitch));
+    let rotated_offset = rotation * offset;
+
+    self.position = self.target + rotated_offset;
+}
 }

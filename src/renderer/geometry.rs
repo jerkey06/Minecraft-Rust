@@ -63,11 +63,11 @@ impl Cube {
         }
     }
     
-    pub fn render(
-        &self, 
-        render_pass: &mut wgpu::RenderPass, 
-        pipeline: &wgpu::RenderPipeline, 
-        bind_group: &wgpu::BindGroup
+    pub fn render<'a>(
+        &'a self,
+        render_pass: &mut wgpu::RenderPass<'a>, 
+        pipeline: &'a wgpu::RenderPipeline, 
+        bind_group: &'a wgpu::BindGroup
     ) {
         render_pass.set_pipeline(pipeline);
         render_pass.set_bind_group(0, bind_group, &[]);
