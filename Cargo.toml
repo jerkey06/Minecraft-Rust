@@ -10,12 +10,17 @@ wgpu = "0.19"
 env_logger = "0.10"
 log = "0.4"
 
+# Debug UI
+egui = "0.27"
+egui-winit = "0.27"
+egui-wgpu = "0.27"
+
 # Matemáticas
 cgmath = "0.18"
 bytemuck = { version = "1.14", features = ["derive"] }
 
 # Monitoreo y performance
-sysinfo = "0.30"
+sysinfo = "0.35"
 fps_counter = "3.0"
 
 # Async y threading

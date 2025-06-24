@@ -64,5 +64,5 @@ impl Camera {
     let rotated_offset = rotation * offset;
 
     self.position = self.target + rotated_offset;
-}
+    }
 }
