@@ -1,3 +1,4 @@
+
 mod vertex;
 mod uniforms;
 mod geometry;
@@ -13,6 +14,10 @@ use wgpu::util::DeviceExt;
 use winit::window::Window;
 use log::info;
 
+use crate::debug::gui::GuiManager;
+use crate::debug::overlay::DebugOverlay;
+use crate::monitoring::SystemMonitor;
+
 pub struct Renderer {
     surface: wgpu::Surface<'static>,
     device: wgpu::Device,
@@ -21,6 +26,9 @@ pub struct Renderer {
     size: winit::dpi::PhysicalSize<u32>,
     render_pipeline: wgpu::RenderPipeline,
     
+    // Información del adaptador
+    pub gpu_name: String,
+
     // Componentes separados
     camera: Camera,
     cube: Cube,
@@ -29,6 +37,9 @@ pub struct Renderer {
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
     
+    // GUI
+    pub gui_manager: GuiManager,
+
     // Estado
     rotation: f32,
 }
@@ -43,7 +54,7 @@ impl Renderer {
             ..Default::default()
         });
         
-        let surface = instance.create_surface(window)?;
+        let surface = instance.create_surface(window.clone())?;
         
         let adapter = instance.request_adapter(
             &wgpu::RequestAdapterOptions {
@@ -53,7 +64,8 @@ impl Renderer {
             },
         ).await.ok_or_else(|| anyhow::anyhow!("Failed to get adapter"))?;
 
-        info!("GPU: {:?}", adapter.get_info().name);
+        let gpu_name = adapter.get_info().name;
+        info!("GPU: {:?}", gpu_name);
         info!("Backend: {:?}", adapter.get_info().backend);
 
         let (device, queue) = adapter.request_device(
@@ -84,6 +96,9 @@ impl Renderer {
         };
         
         surface.configure(&device, &config);
+
+        // Crear GUI
+        let gui_manager = GuiManager::new(&window, &device, config.format);
 
         // Crear shader
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -193,10 +208,12 @@ impl Renderer {
             config,
             size,
             render_pipeline,
+            gpu_name,
             camera,
             cube,
             uniform_buffer,
             uniform_bind_group,
+            gui_manager,
             rotation: 0.0,
         })
     }
@@ -217,7 +234,7 @@ impl Renderer {
         self.size
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+    pub fn render(&mut self, window: &Window, debug_overlay: &DebugOverlay, system_monitor: &SystemMonitor) -> Result<(), wgpu::SurfaceError> {
         // Actualizar rotación
         self.rotation += 0.01;
 
@@ -262,6 +279,9 @@ impl Renderer {
             // Renderizar cubo
             self.cube.render(&mut render_pass, &self.render_pipeline, &self.uniform_bind_group);
         }
+
+        // Renderizar GUI
+        self.gui_manager.render(window, &self.device, &self.queue, &mut encoder, &view, system_monitor, debug_overlay, &self.gpu_name);
 
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();

@@ -1,16 +1,21 @@
+
 mod renderer;
 mod monitoring;
+mod debug;
 
 use std::sync::Arc;
 use winit::{
-    event::{Event, WindowEvent},
+    event::{Event, WindowEvent, KeyEvent, ElementState},
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
+    keyboard::{PhysicalKey, KeyCode},
 };
 use log::{info, warn, error};
 
 use crate::renderer::Renderer;
 use crate::monitoring::SystemMonitor;
+use crate::debug::gui::GuiManager;
+use crate::debug::overlay::DebugOverlay;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -39,6 +44,9 @@ async fn main() -> anyhow::Result<()> {
     let mut system_monitor = SystemMonitor::new();
     info!("System monitor initialized");
 
+    let mut debug_overlay = DebugOverlay::new();
+    info!("Debug overlay initialized");
+
     let mut last_render_time = std::time::Instant::now();
     
     event_loop.run(move |event, control_flow| {
@@ -47,6 +55,7 @@ async fn main() -> anyhow::Result<()> {
                 ref event,
                 window_id,
             } if window_id == window.id() => {
+                renderer.gui_manager.handle_event(&window, event);
                 match event {
                     WindowEvent::CloseRequested => {
                         info!("Closing application");
@@ -57,6 +66,16 @@ async fn main() -> anyhow::Result<()> {
                               physical_size.width, physical_size.height);
                         renderer.resize(*physical_size);
                     }
+                    WindowEvent::KeyboardInput {
+                        event: KeyEvent {
+                            physical_key: PhysicalKey::Code(KeyCode::F3),
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                        ..
+                    } => {
+                        debug_overlay.toggle();
+                    }
                     WindowEvent::RedrawRequested => {
                         let now = std::time::Instant::now();
                         let dt = now - last_render_time;
@@ -64,7 +83,7 @@ async fn main() -> anyhow::Result<()> {
 
                         system_monitor.update();
 
-                        match renderer.render() {
+                        match renderer.render(&window, &debug_overlay, &system_monitor) {
                             Ok(_) => {
                                 system_monitor.record_frame(dt);
                             }
