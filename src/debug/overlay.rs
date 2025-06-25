@@ -26,7 +26,7 @@ impl DebugOverlay {
         }
 
         Window::new("Debug Info (F3)")
-            .default_size([220.0, 120.0])
+            .default_size([430.0, 140.0])
             .show(ctx, |ui| {
                 ui.label(format!("FPS: {:.1}", 1.0 / monitor.get_avg_frame_time_ms() * 1000.0));
                 ui.label(format!("CPU ({}): {:.1}%", monitor.get_cpu_brand(), monitor.get_cpu_usage()));
