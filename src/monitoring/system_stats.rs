@@ -1,48 +1,36 @@
-use sysinfo::{System, get_current_pid};
-use log::info;
+use sysinfo::{System, CpuRefreshKind};
 
 pub struct SystemStats {
     system: System,
+    cpu_brand: String,
 }
 
 impl SystemStats {
     pub fn new() -> Self {
-        let mut system = System::new_all();
+        let mut system = System::new();
         system.refresh_all();
-        Self { system }
+        let cpu_brand = system.cpus().first().map_or("Unknown".to_string(), |cpu| cpu.brand().to_string());
+        Self { system, cpu_brand }
     }
 
     pub fn refresh(&mut self) {
-        self.system.refresh_all();
+        self.system.refresh_cpu_specifics(CpuRefreshKind::everything());
+        self.system.refresh_memory();
     }
 
-    pub fn log(&self) {
-        let total_memory = self.system.total_memory();
-        let used_memory = self.system.used_memory();
-        let memory_usage_percent = (used_memory as f64 / total_memory as f64) * 100.0;
-
-        let cpu_usage: f32 = self.system.cpus().iter()
-            .map(|cpu| cpu.cpu_usage())
-            .sum::<f32>() / self.system.cpus().len() as f32;
-
-        let process_memory = self.system.process(sysinfo::get_current_pid().unwrap())
-            .map(|p| p.memory())
-            .unwrap_or(0);
-
-        info!(
-            "📊 Sistema | CPU: {:.1}% | RAM: {:.1}% ({}/{} MB) | Proceso: {:.1} MB",
-            cpu_usage,
-            memory_usage_percent,
-            used_memory / 1024 / 1024,
-            total_memory / 1024 / 1024,
-            process_memory as f64 / 1024.0 / 1024.0
-        );
+    pub fn get_cpu_brand(&self) -> &str {
+        &self.cpu_brand
     }
 
     pub fn get_cpu_usage(&self) -> f32 {
-        self.system.cpus().iter()
-            .map(|cpu| cpu.cpu_usage())
-            .sum::<f32>() / self.system.cpus().len() as f32
+        self.system.global_cpu_usage()
+    }
+
+    pub fn get_gpu_usage(&self) -> f32 {
+        // Nota: sysinfo no proporciona una forma directa de obtener el uso de la GPU.
+        // Esta es una métrica difícil de obtener de forma multiplataforma.
+        // Devolveremos 0.0 por ahora.
+        0.0
     }
 
     pub fn get_memory_usage_percent(&self) -> f64 {
