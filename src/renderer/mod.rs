@@ -1,8 +1,8 @@
-//! # Módulo de Renderizado
+//! # Renderer Module
 //! 
-//! Este módulo es el núcleo del motor de renderizado. Se encarga de inicializar `wgpu`,
-//! gestionar la superficie de renderizado, crear los pipelines de renderizado y dibujar
-//! la escena en cada fotograma.
+//! This module is the core of the rendering engine. It handles `wgpu` initialization,
+//! manages the render surface, creates the render pipelines, and draws the scene
+//! every frame.
 
 mod vertex;
 mod uniforms;
@@ -23,7 +23,7 @@ use crate::debug::gui::GuiManager;
 use crate::debug::overlay::DebugOverlay;
 use crate::monitoring::SystemMonitor;
 
-/// Gestiona todos los aspectos del renderizado.
+/// Manages all rendering-related aspects.
 pub struct Renderer {
     surface: wgpu::Surface<'static>,
     device: wgpu::Device,
@@ -32,32 +32,30 @@ pub struct Renderer {
     size: winit::dpi::PhysicalSize<u32>,
     render_pipeline: wgpu::RenderPipeline,
     
-    // Información del adaptador
+    // Adapter information
     pub gpu_name: String,
 
-    // Componentes separados
+    // Separate components
     camera: Camera,
     cube: Cube,
     
-    // Buffers y recursos
+    // Buffers and resources
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
     
     // GUI
     pub gui_manager: GuiManager,
 
-    // Estado
+    // State
     rotation: f32,
 }
 
 impl Renderer {
-    /// Crea una nueva instancia de `Renderer`.
-    /// 
-    /// Inicializa `wgpu`, la superficie de renderizado, la cámara, la geometría y la GUI.
+    /// Creates a new `Renderer`.
     pub async fn new(window: Arc<Window>) -> anyhow::Result<Self> {
         let size = window.inner_size();
         
-        // Configuración de wgpu
+        // Initialize wgpu
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::PRIMARY,
             ..Default::default()
@@ -71,7 +69,7 @@ impl Renderer {
                 compatible_surface: Some(&surface),
                 force_fallback_adapter: false,
             },
-        ).await.ok_or_else(|| anyhow::anyhow!("No se pudo obtener el adaptador"))?;
+        ).await.ok_or_else(|| anyhow::anyhow!("Failed to get adapter"))?;
 
         let gpu_name = adapter.get_info().name;
         info!("GPU: {:?}", gpu_name);
@@ -86,7 +84,7 @@ impl Renderer {
             None,
         ).await?;
 
-        // Configurar la superficie
+        // Configure the surface
         let surface_caps = surface.get_capabilities(&adapter);
         let surface_format = surface_caps.formats.iter()
             .copied()
@@ -106,16 +104,16 @@ impl Renderer {
         
         surface.configure(&device, &config);
 
-        // Crear la GUI
+        // Create the GUI
         let gui_manager = GuiManager::new(&window, &device, config.format);
 
-        // Crear el shader
+        // Create the shader
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
         });
 
-        // Crear la cámara
+        // Create the camera
         let camera = Camera::new(
             cgmath::Point3::new(0.0, 0.0, 3.0),
             cgmath::Point3::new(0.0, 0.0, 0.0),
@@ -126,7 +124,7 @@ impl Renderer {
             100.0,
         );
 
-        // Crear los uniforms
+        // Create the uniforms
         let mut uniforms = Uniforms::new();
         uniforms.update_from_camera(&camera, 0.0);
 
@@ -165,7 +163,7 @@ impl Renderer {
             label: Some("uniform_bind_group"),
         });
 
-        // Crear el pipeline de renderizado
+        // Create the render pipeline
         let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
             bind_group_layouts: &[&uniform_bind_group_layout],
@@ -207,7 +205,7 @@ impl Renderer {
             multiview: None,
         });
 
-        // Crear la geometría
+        // Create the geometry
         let cube = Cube::new(&device);
 
         Ok(Self {
@@ -227,7 +225,7 @@ impl Renderer {
         })
     }
 
-    /// Redimensiona la superficie de renderizado cuando cambia el tamaño de la ventana.
+    /// Resizes the render surface when the window size changes.
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
             self.size = new_size;
@@ -235,22 +233,22 @@ impl Renderer {
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
             
-            // Actualizar la relación de aspecto de la cámara.
+            // Update the camera's aspect ratio.
             self.camera.set_aspect_ratio(new_size.width as f32 / new_size.height as f32);
         }
     }
 
-    /// Devuelve el tamaño actual de la superficie de renderizado.
+    /// Returns the current size of the render surface.
     pub fn size(&self) -> winit::dpi::PhysicalSize<u32> {
         self.size
     }
 
-    /// Renderiza un solo fotograma.
+    /// Renders a single frame.
     pub fn render(&mut self, window: &Window, debug_overlay: &DebugOverlay, system_monitor: &SystemMonitor) -> Result<(), wgpu::SurfaceError> {
-        // Actualizar la rotación del cubo.
+        // Update the cube's rotation.
         self.rotation += 0.01;
 
-        // Actualizar los uniforms.
+        // Update the uniforms.
         let mut uniforms = Uniforms::new();
         uniforms.update_from_camera(&self.camera, self.rotation);
 
@@ -288,11 +286,11 @@ impl Renderer {
                 timestamp_writes: None,
             });
 
-            // Renderizar el cubo.
+            // Render the cube.
             self.cube.render(&mut render_pass, &self.render_pipeline, &self.uniform_bind_group);
         }
 
-        // Renderizar la GUI.
+        // Render the GUI.
         self.gui_manager.render(window, &self.device, &self.queue, &mut encoder, &view, system_monitor, debug_overlay, &self.gpu_name);
 
         self.queue.submit(std::iter::once(encoder.finish()));

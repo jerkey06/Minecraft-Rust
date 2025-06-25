@@ -1,49 +1,49 @@
-# Minecraft Clone en Rust
+# Minecraft Clone in Rust
 
-Este proyecto es un clon de Minecraft escrito en Rust, utilizando `wgpu` para el renderizado. Sirve como un campo de pruebas para aprender sobre gráficos por computadora, desarrollo de juegos y el ecosistema de Rust.
+This project is a Minecraft clone written in Rust, using `wgpu` for rendering. It serves as a learning playground for computer graphics, game development, and the Rust ecosystem.
 
-## Características
+## Features
 
-*   **Renderizado 3D:** Utiliza `wgpu` para renderizar una escena 3D simple con un cubo giratorio.
-*   **Superposición de Depuración:** Muestra una superposición de depuración (estilo F3) que se puede activar/desactivar con la tecla F3. La superposición muestra:
-    *   FPS (Fotogramas por segundo)
-    *   Uso de la CPU y nombre
-    *   Uso de la GPU y nombre
-    *   Uso de la RAM
-    *   Memoria utilizada por el proceso
-*   **Cámara 3D:** Una cámara simple que se puede mover y girar.
+*   **3D Rendering:** Uses `wgpu` to render a simple 3D scene with a rotating cube.
+*   **Debug Overlay:** Displays an F3-style debug overlay that can be toggled with the F3 key. The overlay shows:
+    *   FPS (Frames Per Second)
+    *   CPU usage and name
+    *   GPU usage and name
+    *   RAM usage
+    *   Memory used by the process
+*   **3D Camera:** A simple camera that can be moved and rotated.
 
-## Cómo Compilar y Ejecutar
+## How to Compile and Run
 
-1.  **Instalar Rust:** Si aún no lo has hecho, instala Rust desde [rustup.rs](https://rustup.rs/).
-2.  **Clonar el repositorio:**
+1.  **Install Rust:** If you haven't already, install Rust from [rustup.rs](https://rustup.rs/).
+2.  **Clone the repository:**
     ```bash
-    git clone <URL_DEL_REPOSITORIO>
+    git clone <REPOSITORY_URL>
     cd minecraft-rust
     ```
-3.  **Ejecutar la aplicación:**
+3.  **Run the application:**
     ```bash
     cargo run
     ```
 
-## Dependencias
+## Dependencies
 
-*   `wgpu`: Para el renderizado de gráficos 3D.
-*   `winit`: Para la gestión de ventanas y eventos.
-*   `egui`: Para la creación de la interfaz gráfica de usuario (GUI) de la superposición de depuración.
-*   `egui-wgpu`: Para la integración de `egui` con `wgpu`.
-*   `egui-winit`: Para la integración de `egui` con `winit`.
-*   `cgmath`: Para las operaciones matemáticas de vectores y matrices.
-*   `sysinfo`: Para obtener información del sistema (CPU, RAM, etc.).
-*   `log` y `env_logger`: Para el registro de mensajes en la consola.
-*   `tokio`: Para el tiempo de ejecución asíncrono.
+*   `wgpu`: For 3D graphics rendering.
+*   `winit`: For windowing and event handling.
+*   `egui`: For creating the debug overlay GUI.
+*   `egui-wgpu`: For integrating `egui` with `wgpu`.
+*   `egui-winit`: For integrating `egui` with `winit`.
+*   `cgmath`: For vector and matrix math.
+*   `sysinfo`: For getting system information (CPU, RAM, etc.).
+*   `log` and `env_logger`: For logging messages to the console.
+*   `tokio`: For the asynchronous runtime.
 
-## Documentación del Código
+## Code Documentation
 
-Este proyecto utiliza comentarios de documentación en el código. Para generar la documentación, ejecuta:
+This project uses documentation comments in the code. To generate the documentation, run:
 
 ```bash
 cargo doc --open
 ```
 
-Esto abrirá la documentación en tu navegador web.
+This will open the documentation in your web browser.

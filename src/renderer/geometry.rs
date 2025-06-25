@@ -1,12 +1,11 @@
-//! # Geometría
+//! # Geometry
 //! 
-//! Este módulo define la geometría de los objetos que se renderizan en la escena.
-//! Actualmente, solo contiene una estructura `Cube` para crear y renderizar un cubo.
+//! This module defines the geometry of the objects that are rendered in the scene.
 
 use crate::renderer::vertex::Vertex;
 use wgpu::util::DeviceExt;
 
-/// Representa un cubo con sus vértices y búferes de índices.
+/// Represents a cube with its vertex and index buffers.
 pub struct Cube {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
@@ -14,18 +13,16 @@ pub struct Cube {
 }
 
 impl Cube {
-    /// Crea un nuevo cubo.
-    /// 
-    /// Crea los búferes de vértices e índices para un cubo y los sube a la GPU.
+    /// Creates a new cube.
     pub fn new(device: &wgpu::Device) -> Self {
         let vertices = vec![
-            // Cara frontal
+            // Front face
             Vertex::new([-0.5, -0.5,  0.5], [1.0, 0.0, 0.0]),
             Vertex::new([ 0.5, -0.5,  0.5], [0.0, 1.0, 0.0]),
             Vertex::new([ 0.5,  0.5,  0.5], [0.0, 0.0, 1.0]),
             Vertex::new([-0.5,  0.5,  0.5], [1.0, 1.0, 0.0]),
             
-            // Cara trasera
+            // Back face
             Vertex::new([-0.5, -0.5, -0.5], [1.0, 0.0, 1.0]),
             Vertex::new([ 0.5, -0.5, -0.5], [0.0, 1.0, 1.0]),
             Vertex::new([ 0.5,  0.5, -0.5], [0.5, 0.5, 0.5]),
@@ -33,17 +30,17 @@ impl Cube {
         ];
 
         let indices: Vec<u16> = vec![
-            // Cara frontal
+            // Front face
             0, 1, 2, 2, 3, 0,
-            // Cara trasera
+            // Back face
             4, 6, 5, 6, 4, 7,
-            // Cara izquierda
+            // Left face
             4, 0, 3, 3, 7, 4,
-            // Cara derecha
+            // Right face
             1, 5, 6, 6, 2, 1,
-            // Cara superior
+            // Top face
             3, 2, 6, 6, 7, 3,
-            // Cara inferior
+            // Bottom face
             4, 5, 1, 1, 0, 4,
         ];
         
@@ -72,7 +69,7 @@ impl Cube {
         }
     }
     
-    /// Renderiza el cubo.
+    /// Renders the cube.
     pub fn render<'a>(
         &'a self,
         render_pass: &mut wgpu::RenderPass<'a>, 

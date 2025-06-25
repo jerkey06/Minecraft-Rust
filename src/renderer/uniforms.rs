@@ -1,11 +1,11 @@
 //! # Uniforms
 //! 
-//! Este módulo define la estructura `Uniforms` que contiene los datos que se pasan
-//! a los shaders, como la matriz de vista-proyección.
+//! This module defines the `Uniforms` struct, which contains data that is passed
+//! to shaders, such as the view-projection matrix.
 
 use crate::renderer::camera::Camera;
 
-/// Contiene los datos uniformes que se pasan a los shaders.
+/// Contains the uniform data that is passed to shaders.
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Uniforms {
@@ -13,7 +13,7 @@ pub struct Uniforms {
 }
 
 impl Uniforms {
-    /// Crea una nueva instancia de `Uniforms` con una matriz de identidad.
+    /// Creates a new `Uniforms` with an identity matrix.
     pub fn new() -> Self {
         use cgmath::{Matrix4, SquareMatrix};
         Self {
@@ -21,7 +21,7 @@ impl Uniforms {
         }
     }
 
-    /// Actualiza la matriz de vista-proyección a partir de la cámara y una rotación.
+    /// Updates the view-projection matrix from the camera and a rotation.
     pub fn update_from_camera(&mut self, camera: &Camera, rotation: f32) {
         use cgmath::{Matrix4, Rad};
         

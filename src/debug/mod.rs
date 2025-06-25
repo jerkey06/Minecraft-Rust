@@ -1,7 +1,6 @@
-//! # Módulo de Depuración
+//! # Debug Module
 //! 
-//! Este módulo contiene herramientas y superposiciones para depurar la aplicación.
-//! Incluye una superposición de depuración estilo F3 y un gestor de GUI para renderizarla.
+//! This module contains tools and overlays for debugging the application.
 
 pub mod overlay;
 pub mod gui;

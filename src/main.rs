@@ -1,10 +1,8 @@
 //! # Minecraft Clone
 //! 
-//! Este es un clon de Minecraft escrito en Rust utilizando wgpu para el renderizado.
-//! El proyecto sirve como un campo de pruebas para aprender sobre gráficos por computadora,
-//! desarrollo de juegos y el ecosistema de Rust.
+//! A Minecraft clone written in Rust using wgpu for rendering.
 
-// Módulos principales de la aplicación.
+// Application modules.
 mod renderer;
 mod monitoring;
 mod debug;
@@ -22,21 +20,17 @@ use crate::renderer::Renderer;
 use crate::monitoring::SystemMonitor;
 use crate::debug::overlay::DebugOverlay;
 
-/// Punto de entrada principal de la aplicación.
-/// 
-/// Inicializa el logger, la ventana, el renderizador y los sistemas de monitoreo.
-/// Luego, entra en el bucle de eventos principal para manejar las interacciones del usuario
-/// y renderizar la escena.
+/// The main entry point of the application.
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Inicializar el logger para mostrar mensajes en la consola.
+    // Initialize the logger.
     env_logger::Builder::from_default_env()
         .filter_level(log::LevelFilter::Info)
         .init();
 
-    info!("Iniciando Minecraft Clone en Rust");
+    info!("Starting Minecraft Clone in Rust");
 
-    // Crear el bucle de eventos y la ventana.
+    // Create the event loop and window.
     let event_loop = EventLoop::new()?;
     let window = Arc::new(
         WindowBuilder::new()
@@ -46,41 +40,41 @@ async fn main() -> anyhow::Result<()> {
             .build(&event_loop)?
     );
 
-    info!("Ventana creada: {}x{}", 
+    info!("Window created: {}x{}", 
           window.inner_size().width, 
           window.inner_size().height);
 
-    // Inicializar el renderizador de wgpu.
+    // Initialize the wgpu renderer.
     let mut renderer = Renderer::new(Arc::clone(&window)).await?;
-    info!("Renderizador inicializado con wgpu");
+    info!("Renderer initialized with wgpu");
 
-    // Inicializar el monitor del sistema para las estadísticas de depuración.
+    // Initialize the system monitor for debug statistics.
     let mut system_monitor = SystemMonitor::new();
-    info!("Monitor del sistema inicializado");
+    info!("System monitor initialized");
 
-    // Inicializar la superposición de depuración.
+    // Initialize the debug overlay.
     let mut debug_overlay = DebugOverlay::new();
-    info!("Superposición de depuración inicializada");
+    info!("Debug overlay initialized");
 
     let mut last_render_time = std::time::Instant::now();
     
-    // Iniciar el bucle de eventos.
+    // Start the event loop.
     event_loop.run(move |event, control_flow| {
         match event {
             Event::WindowEvent {
                 ref event,
                 window_id,
             } if window_id == window.id() => {
-                // Pasar eventos a la GUI para que los procese.
+                // Pass events to the GUI for processing.
                 renderer.gui_manager.handle_event(&window, event);
                 
                 match event {
                     WindowEvent::CloseRequested => {
-                        info!("Cerrando la aplicación");
+                        info!("Closing application");
                         control_flow.exit();
                     }
                     WindowEvent::Resized(physical_size) => {
-                        info!("Redimensionando la ventana: {}x{}", 
+                        info!("Resizing window: {}x{}", 
                               physical_size.width, physical_size.height);
                         renderer.resize(*physical_size);
                     }
@@ -92,7 +86,7 @@ async fn main() -> anyhow::Result<()> {
                         },
                         ..
                     } => {
-                        // Activar/desactivar la superposición de depuración con F3.
+                        // Toggle the debug overlay with F3.
                         debug_overlay.toggle();
                     }
                     WindowEvent::RedrawRequested => {
@@ -100,24 +94,24 @@ async fn main() -> anyhow::Result<()> {
                         let dt = now - last_render_time;
                         last_render_time = now;
 
-                        // Actualizar el monitor del sistema.
+                        // Update the system monitor.
                         system_monitor.update();
 
-                        // Renderizar la escena.
+                        // Render the scene.
                         match renderer.render(&window, &debug_overlay, &system_monitor) {
                             Ok(_) => {
                                 system_monitor.record_frame(dt);
                             }
                             Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
-                                // Recrear la cadena de intercambio si se pierde o está desactualizada.
+                                // Recreate the swap chain if it's lost or outdated.
                                 renderer.resize(renderer.size());
                             }
                             Err(wgpu::SurfaceError::OutOfMemory) => {
-                                error!("¡Sin memoria!");
+                                error!("Out of memory!");
                                 control_flow.exit();
                             }
                             Err(e) => {
-                                warn!("Error de renderizado: {:?}", e);
+                                warn!("Render error: {:?}", e);
                             }
                         }
                     }
@@ -125,7 +119,7 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
             Event::AboutToWait => {
-                // Solicitar un redibujado en el siguiente ciclo.
+                // Request a redraw on the next cycle.
                 window.request_redraw();
             }
             _ => {}

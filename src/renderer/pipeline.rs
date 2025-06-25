@@ -1,19 +1,16 @@
-//! # Pipeline de Renderizado
+//! # Render Pipeline
 //! 
-//! Este módulo define el pipeline de renderizado de `wgpu`.
-//! El pipeline de renderizado describe las etapas del proceso de renderizado,
-//! como los shaders de vértices y fragmentos, el formato de los datos de los vértices
-//! y la configuración de la rasterización.
+//! This module defines the `wgpu` render pipeline.
 
 use crate::renderer::{vertex::Vertex, shaders};
 
-/// Contiene el pipeline de renderizado de `wgpu`.
+/// Contains the `wgpu` render pipeline.
 pub struct RenderPipeline {
     pipeline: wgpu::RenderPipeline,
 }
 
 impl RenderPipeline {
-    /// Crea un nuevo pipeline de renderizado.
+    /// Creates a new render pipeline.
     pub fn new(
         device: &wgpu::Device, 
         config: &wgpu::SurfaceConfiguration,
@@ -65,7 +62,7 @@ impl RenderPipeline {
         Ok(Self { pipeline })
     }
     
-    /// Devuelve una referencia al pipeline de renderizado.
+    /// Returns a reference to the render pipeline.
     pub fn get_pipeline(&self) -> &wgpu::RenderPipeline {
         &self.pipeline
     }

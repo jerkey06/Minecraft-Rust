@@ -1,8 +1,6 @@
-//! # Gestor de GUI
+//! # GUI Manager
 //! 
-//! Este módulo encapsula la lógica para renderizar interfaces gráficas de usuario (GUI)
-//! utilizando `egui`. Se encarga de la inicialización, el manejo de eventos y el renderizado
-//! de la GUI sobre la escena principal.
+//! This module encapsulates the logic for rendering GUIs using `egui`.
 
 use egui::{Context, PlatformOutput, ViewportId};
 use egui_wgpu::Renderer as EguiRenderer;
@@ -13,7 +11,7 @@ use winit::window::Window;
 use crate::monitoring::SystemMonitor;
 use crate::debug::overlay::DebugOverlay;
 
-/// Gestiona el estado y el renderizado de la GUI de `egui`.
+/// Manages the state and rendering of the `egui` GUI.
 pub struct GuiManager {
     pub ctx: Context,
     pub state: State,
@@ -21,9 +19,7 @@ pub struct GuiManager {
 }
 
 impl GuiManager {
-    /// Crea una nueva instancia de `GuiManager`.
-    /// 
-    /// Inicializa el contexto de `egui`, el estado de la ventana y el renderizador de `egui-wgpu`.
+    /// Creates a new `GuiManager`.
     pub fn new(window: &Window, device: &wgpu::Device, surface_format: wgpu::TextureFormat) -> Self {
         let ctx = Context::default();
         let state = State::new(ctx.clone(), ViewportId::ROOT, &window, None, None);
@@ -36,14 +32,12 @@ impl GuiManager {
         }
     }
 
-    /// Maneja los eventos de la ventana y los pasa a `egui`.
+    /// Handles window events and passes them to `egui`.
     pub fn handle_event(&mut self, window: &Window, window_event: &WindowEvent) {
         let _ = self.state.on_window_event(window, window_event);
     }
 
-    /// Renderiza la GUI en la pantalla.
-    /// 
-    /// Dibuja la superposición de depuración y cualquier otra interfaz de usuario definida.
+    /// Renders the GUI.
     pub fn render(
         &mut self,
         window: &Window,
@@ -55,27 +49,27 @@ impl GuiManager {
         debug_overlay: &DebugOverlay,
         gpu_name: &str,
     ) {
-        // Obtener la entrada de `egui` y ejecutar la lógica de la UI.
+        // Get `egui` input and run the UI logic.
         let raw_input = self.state.take_egui_input(window);
         let full_output = self.ctx.run(raw_input, |ctx| {
             debug_overlay.ui(ctx, system_monitor, gpu_name);
         });
 
-        // Manejar la salida de la plataforma (por ejemplo, copiar al portapapeles).
+        // Handle platform output (e.g., clipboard).
         self.state.handle_platform_output(window, full_output.platform_output);
 
-        // Teselar las formas de `egui` en triángulos.
+        // Tessellate `egui` shapes into triangles.
         let tris = self
             .ctx
             .tessellate(full_output.shapes, full_output.pixels_per_point);
 
-        // Actualizar las texturas de `egui`.
+        // Update `egui` textures.
         for (id, image_delta) in &full_output.textures_delta.set {
             self.renderer
                 .update_texture(device, queue, *id, image_delta);
         }
 
-        // Actualizar los buffers de `egui`.
+        // Update `egui` buffers.
         let screen_descriptor = egui_wgpu::ScreenDescriptor {
             size_in_pixels: [window.inner_size().width, window.inner_size().height],
             pixels_per_point: window.scale_factor() as f32,
@@ -84,7 +78,7 @@ impl GuiManager {
         self.renderer
             .update_buffers(device, queue, encoder, &tris, &screen_descriptor);
 
-        // Renderizar la GUI.
+        // Render the GUI.
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Egui Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {

@@ -1,12 +1,12 @@
-//! # Perfilador de Fotogramas
+//! # Frame Profiler
 //! 
-//! Este módulo proporciona una estructura `FrameProfiler` para medir y registrar
-//! el tiempo de renderizado de los fotogramas y calcular los FPS (fotogramas por segundo).
+//! This module provides a `FrameProfiler` struct for measuring and recording
+//! frame render times and calculating FPS (frames per second).
 
 use std::time::Duration;
 use log::info;
 
-/// Mide y calcula estadísticas sobre los tiempos de fotograma.
+/// Measures and calculates statistics about frame times.
 pub struct FrameProfiler {
     frame_times: Vec<Duration>,
     max_samples: usize,
@@ -15,9 +15,9 @@ pub struct FrameProfiler {
 }
 
 impl FrameProfiler {
-    /// Crea una nueva instancia de `FrameProfiler`.
+    /// Creates a new `FrameProfiler`.
     /// 
-    /// - `max_samples`: El número máximo de tiempos de fotograma a almacenar para el cálculo de la media.
+    /// - `max_samples`: The maximum number of frame times to store for a moving average.
     pub fn new(max_samples: usize) -> Self {
         Self {
             frame_times: Vec::with_capacity(max_samples),
@@ -27,7 +27,7 @@ impl FrameProfiler {
         }
     }
 
-    /// Registra el tiempo que ha tardado en renderizarse un nuevo fotograma.
+    /// Records the time it took to render a new frame.
     pub fn record(&mut self, frame_time: Duration) {
         self.frame_times.push(frame_time);
         if self.frame_times.len() > self.max_samples {
@@ -38,12 +38,12 @@ impl FrameProfiler {
         self.current_fps = (1.0 / frame_time.as_secs_f64()).round() as usize;
     }
 
-    /// Devuelve `true` si se debe registrar un nuevo conjunto de estadísticas.
+    /// Returns `true` if a new set of statistics should be logged.
     pub fn should_log(&self) -> bool {
         self.frames_recorded % 120 == 0
     }
 
-    /// Registra las estadísticas de tiempo de fotograma en la consola.
+    /// Logs the frame time statistics to the console.
     pub fn log(&self) {
         if self.frame_times.is_empty() {
             return;
@@ -78,7 +78,7 @@ impl FrameProfiler {
         );
     }
 
-    /// Devuelve el tiempo medio de fotograma en milisegundos.
+    /// Returns the average frame time in milliseconds.
     pub fn get_avg_frame_time_ms(&self) -> f64 {
         if self.frame_times.is_empty() {
             return 0.0;

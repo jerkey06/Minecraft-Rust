@@ -1,9 +1,9 @@
 //! # Shaders
 //! 
-//! Este módulo proporciona funciones para crear los módulos de shader de `wgpu`
-//! a partir de los archivos de shader de WGSL.
+//! This module provides functions for creating `wgpu` shader modules
+//! from WGSL shader files.
 
-/// Crea el módulo de shader básico.
+/// Creates the basic shader module.
 pub fn create_basic_shader(device: &wgpu::Device) -> wgpu::ShaderModule {
     device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("Basic Shader"),
@@ -11,7 +11,7 @@ pub fn create_basic_shader(device: &wgpu::Device) -> wgpu::ShaderModule {
     })
 }
 
-/// Crea el módulo de shader con textura.
+/// Creates the textured shader module.
 pub fn create_textured_shader(device: &wgpu::Device) -> wgpu::ShaderModule {
     device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("Textured Shader"),

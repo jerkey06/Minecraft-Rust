@@ -1,9 +1,8 @@
-//! # Vértice
+//! # Vertex
 //! 
-//! Este módulo define la estructura `Vertex` que representa un vértice en el espacio 3D.
-//! Contiene la posición y el color del vértice.
+//! This module defines the `Vertex` struct, which represents a vertex in 3D space.
 
-/// Representa un vértice en el espacio 3D con una posición y un color.
+/// Represents a vertex in 3D space with a position and color.
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
@@ -12,12 +11,12 @@ pub struct Vertex {
 }
 
 impl Vertex {
-    /// Crea un nuevo vértice.
+    /// Creates a new vertex.
     pub fn new(position: [f32; 3], color: [f32; 3]) -> Self {
         Self { position, color }
     }
     
-    /// Devuelve la descripción del búfer de vértices para este tipo de vértice.
+    /// Returns the vertex buffer layout for this vertex type.
     pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
