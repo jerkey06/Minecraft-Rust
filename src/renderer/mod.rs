@@ -1,3 +1,8 @@
+//! # Módulo de Renderizado
+//! 
+//! Este módulo es el núcleo del motor de renderizado. Se encarga de inicializar `wgpu`,
+//! gestionar la superficie de renderizado, crear los pipelines de renderizado y dibujar
+//! la escena en cada fotograma.
 
 mod vertex;
 mod uniforms;
@@ -18,6 +23,7 @@ use crate::debug::gui::GuiManager;
 use crate::debug::overlay::DebugOverlay;
 use crate::monitoring::SystemMonitor;
 
+/// Gestiona todos los aspectos del renderizado.
 pub struct Renderer {
     surface: wgpu::Surface<'static>,
     device: wgpu::Device,
@@ -45,6 +51,9 @@ pub struct Renderer {
 }
 
 impl Renderer {
+    /// Crea una nueva instancia de `Renderer`.
+    /// 
+    /// Inicializa `wgpu`, la superficie de renderizado, la cámara, la geometría y la GUI.
     pub async fn new(window: Arc<Window>) -> anyhow::Result<Self> {
         let size = window.inner_size();
         
@@ -62,7 +71,7 @@ impl Renderer {
                 compatible_surface: Some(&surface),
                 force_fallback_adapter: false,
             },
-        ).await.ok_or_else(|| anyhow::anyhow!("Failed to get adapter"))?;
+        ).await.ok_or_else(|| anyhow::anyhow!("No se pudo obtener el adaptador"))?;
 
         let gpu_name = adapter.get_info().name;
         info!("GPU: {:?}", gpu_name);
@@ -77,7 +86,7 @@ impl Renderer {
             None,
         ).await?;
 
-        // Configurar surface
+        // Configurar la superficie
         let surface_caps = surface.get_capabilities(&adapter);
         let surface_format = surface_caps.formats.iter()
             .copied()
@@ -97,16 +106,16 @@ impl Renderer {
         
         surface.configure(&device, &config);
 
-        // Crear GUI
+        // Crear la GUI
         let gui_manager = GuiManager::new(&window, &device, config.format);
 
-        // Crear shader
+        // Crear el shader
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
         });
 
-        // Crear cámara
+        // Crear la cámara
         let camera = Camera::new(
             cgmath::Point3::new(0.0, 0.0, 3.0),
             cgmath::Point3::new(0.0, 0.0, 0.0),
@@ -117,7 +126,7 @@ impl Renderer {
             100.0,
         );
 
-        // Crear uniforms
+        // Crear los uniforms
         let mut uniforms = Uniforms::new();
         uniforms.update_from_camera(&camera, 0.0);
 
@@ -156,7 +165,7 @@ impl Renderer {
             label: Some("uniform_bind_group"),
         });
 
-        // Crear render pipeline
+        // Crear el pipeline de renderizado
         let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
             bind_group_layouts: &[&uniform_bind_group_layout],
@@ -198,7 +207,7 @@ impl Renderer {
             multiview: None,
         });
 
-        // Crear geometría
+        // Crear la geometría
         let cube = Cube::new(&device);
 
         Ok(Self {
@@ -218,6 +227,7 @@ impl Renderer {
         })
     }
 
+    /// Redimensiona la superficie de renderizado cuando cambia el tamaño de la ventana.
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
             self.size = new_size;
@@ -225,20 +235,22 @@ impl Renderer {
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
             
-            // Actualizar aspect ratio de la cámara
+            // Actualizar la relación de aspecto de la cámara.
             self.camera.set_aspect_ratio(new_size.width as f32 / new_size.height as f32);
         }
     }
 
+    /// Devuelve el tamaño actual de la superficie de renderizado.
     pub fn size(&self) -> winit::dpi::PhysicalSize<u32> {
         self.size
     }
 
+    /// Renderiza un solo fotograma.
     pub fn render(&mut self, window: &Window, debug_overlay: &DebugOverlay, system_monitor: &SystemMonitor) -> Result<(), wgpu::SurfaceError> {
-        // Actualizar rotación
+        // Actualizar la rotación del cubo.
         self.rotation += 0.01;
 
-        // Actualizar uniforms
+        // Actualizar los uniforms.
         let mut uniforms = Uniforms::new();
         uniforms.update_from_camera(&self.camera, self.rotation);
 
@@ -276,11 +288,11 @@ impl Renderer {
                 timestamp_writes: None,
             });
 
-            // Renderizar cubo
+            // Renderizar el cubo.
             self.cube.render(&mut render_pass, &self.render_pipeline, &self.uniform_bind_group);
         }
 
-        // Renderizar GUI
+        // Renderizar la GUI.
         self.gui_manager.render(window, &self.device, &self.queue, &mut encoder, &view, system_monitor, debug_overlay, &self.gpu_name);
 
         self.queue.submit(std::iter::once(encoder.finish()));

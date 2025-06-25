@@ -1,6 +1,12 @@
+//! # Geometría
+//! 
+//! Este módulo define la geometría de los objetos que se renderizan en la escena.
+//! Actualmente, solo contiene una estructura `Cube` para crear y renderizar un cubo.
+
 use crate::renderer::vertex::Vertex;
 use wgpu::util::DeviceExt;
 
+/// Representa un cubo con sus vértices y búferes de índices.
 pub struct Cube {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
@@ -8,15 +14,18 @@ pub struct Cube {
 }
 
 impl Cube {
+    /// Crea un nuevo cubo.
+    /// 
+    /// Crea los búferes de vértices e índices para un cubo y los sube a la GPU.
     pub fn new(device: &wgpu::Device) -> Self {
         let vertices = vec![
-            // Front face
+            // Cara frontal
             Vertex::new([-0.5, -0.5,  0.5], [1.0, 0.0, 0.0]),
             Vertex::new([ 0.5, -0.5,  0.5], [0.0, 1.0, 0.0]),
             Vertex::new([ 0.5,  0.5,  0.5], [0.0, 0.0, 1.0]),
             Vertex::new([-0.5,  0.5,  0.5], [1.0, 1.0, 0.0]),
             
-            // Back face
+            // Cara trasera
             Vertex::new([-0.5, -0.5, -0.5], [1.0, 0.0, 1.0]),
             Vertex::new([ 0.5, -0.5, -0.5], [0.0, 1.0, 1.0]),
             Vertex::new([ 0.5,  0.5, -0.5], [0.5, 0.5, 0.5]),
@@ -24,17 +33,17 @@ impl Cube {
         ];
 
         let indices: Vec<u16> = vec![
-            // Front face
+            // Cara frontal
             0, 1, 2, 2, 3, 0,
-            // Back face
+            // Cara trasera
             4, 6, 5, 6, 4, 7,
-            // Left face
+            // Cara izquierda
             4, 0, 3, 3, 7, 4,
-            // Right face
+            // Cara derecha
             1, 5, 6, 6, 2, 1,
-            // Top face
+            // Cara superior
             3, 2, 6, 6, 7, 3,
-            // Bottom face
+            // Cara inferior
             4, 5, 1, 1, 0, 4,
         ];
         
@@ -63,6 +72,7 @@ impl Cube {
         }
     }
     
+    /// Renderiza el cubo.
     pub fn render<'a>(
         &'a self,
         render_pass: &mut wgpu::RenderPass<'a>, 
